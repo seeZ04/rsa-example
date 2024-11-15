@@ -1,0 +1,13 @@
+private function GetSignature($plain)
+    {   
+        $signature = null;
+        Common::debug(self::LOG_FILE,'file://' . DIR . self::STC_PRI);
+        $private_key = openssl_get_privatekey('file://' . DIR . self::STC_PRI);
+        openssl_sign($plain, $signature, $private_key, OPENSSL_ALGO_SHA1 );
+        // free the key from memory
+        openssl_free_key($private_key);
+
+        $signature_ = base64_encode($signature);
+        return $signature_;
+
+    }
