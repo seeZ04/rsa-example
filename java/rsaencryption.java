@@ -127,7 +127,7 @@ public class rsaencryption {
             String signx2 = RSASign(plainText, getPrivateKey(privateKeyContent));
             System.out.println("RSA signx2:" + signx2);
 
-            boolean verify2 = RSAVerify(plainText, "tc/G2bkONMmJPUWO+pARIArW+WWGnrkTjf3yVnSslvisDCuVH3Irvx/c3tWUTKfoCCCKxGbWwX0gqnvaudr/pfSsoIsvlnLbGvKdeqerPuBeyPfNz7JuqOz+Qp2PtZyJ4BraQAM14tmSlOUoO946hewatZYTscW1qwJ6pzgjOeGaO8HWMbTy1veAHBvoDdO1bzIz09/kMFjrXxl3lu8A0CzkbkTjNO+ACqRfu9hxkX18k4DNRzvFxyxNzyOjU+LGfqp26qq2FpqNWaAhu8pAlZs+V3NouWAA8V38pF8RJu3neAHcwKpdjr+0N5eX3y+Ey1h9Us+IxzdM1FBMvfBEFg==", getPublicKey(publicKeyContent));
+            boolean verify2 = RSAVerify(plainText, signx2, getPublicKey(publicKeyContent));
             System.out.println("RSAVerify:" + verify2);
 
         } catch (NoSuchAlgorithmException e) {
