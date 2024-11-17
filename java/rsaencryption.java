@@ -1,26 +1,19 @@
-import static java.nio.charset.StandardCharsets.UTF_8;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-public class RSAUtil {
-
-    // original
-    private static String publicKey = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCgFGVfrY4jQSoZQWWygZ83roKXWD4YeT2x2p41dGkPixe73rT2IW04glagN2vgoZoHuOPqa5and6kAmK2ujmCHu6D1auJhE2tXP+yLkpSiYMQucDKmCsWMnW9XlC5K7OSL77TXXcfvTvyZcjObEz6LIBRzs6+FqpFbUO9SJEfh6wIDAQAB";
-    private static String privateKey = "MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAKAUZV+tjiNBKhlBZbKBnzeugpdYPhh5PbHanjV0aQ+LF7vetPYhbTiCVqA3a+Chmge44+prlqd3qQCYra6OYIe7oPVq4mETa1c/7IuSlKJgxC5wMqYKxYydb1eULkrs5IvvtNddx+9O/JlyM5sTPosgFHOzr4WqkVtQ71IkR+HrAgMBAAECgYAkQLo8kteP0GAyXAcmCAkA2Tql/8wASuTX9ITD4lsws/VqDKO64hMUKyBnJGX/91kkypCDNF5oCsdxZSJgV8owViYWZPnbvEcNqLtqgs7nj1UHuX9S5yYIPGN/mHL6OJJ7sosOd6rqdpg6JRRkAKUV+tmN/7Gh0+GFXM+ug6mgwQJBAO9/+CWpCAVoGxCA+YsTMb82fTOmGYMkZOAfQsvIV2v6DC8eJrSa+c0yCOTa3tirlCkhBfB08f8U2iEPS+Gu3bECQQCrG7O0gYmFL2RX1O+37ovyyHTbst4s4xbLW4jLzbSoimL235lCdIC+fllEEP96wPAiqo6dzmdH8KsGmVozsVRbAkB0ME8AZjp/9Pt8TDXD5LHzo8mlruUdnCBcIo5TMoRG2+3hRe1dHPonNCjgbdZCoyqjsWOiPfnQ2Brigvs7J4xhAkBGRiZUKC92x7QKbqXVgN9xYuq7oIanIM0nz/wq190uq0dh5Qtow7hshC/dSK3kmIEHe8z++tpoLWvQVgM538apAkBoSNfaTkDZhFavuiVl6L8cWCoDcJBItip8wKQhXwHp0O3HLg10OEd14M58ooNfpgt+8D8/8/2OOFaR0HzA+2Dm";
-
-    // private static String publicKey =
-    // "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuP311rXbo8gXgeD+xqHeFRP0H5djzpIO9TEuGXtfIw7z2fKvu5dxUCgXAjKrYH5iHoHZA4FiM138uFrAYiiILi++5Tz0GpNpQ900Qeci4az4Hzy864kg6rFucpgAy0lOLjiPaUcRSfAfg38LM2UaEoFpKE7fQrNcXYKOiSC6/OoEviBkeWyDjYRi8cS29T7wZy4r8TbwWzXNxMfq42jhoUz9U4RTHWd3asM3olv+MltsBm8gEnmpTXmxUYrDTLSLWbddPxdE/rfLU5aalzTx1yK5MwNHhcDfqcgmIA1XOgRe1+6PYpm9NXLEBF8mFldIuhdz2FWFvL5c7mzQ31UySwIDAQAB";
-    // private static String privateKey =
-    // "MIIEpQIBAAKCAQEAuP311rXbo8gXgeD+xqHeFRP0H5djzpIO9TEuGXtfIw7z2fKvu5dxUCgXAjKrYH5iHoHZA4FiM138uFrAYiiILi++5Tz0GpNpQ900Qeci4az4Hzy864kg6rFucpgAy0lOLjiPaUcRSfAfg38LM2UaEoFpKE7fQrNcXYKOiSC6/OoEviBkeWyDjYRi8cS29T7wZy4r8TbwWzXNxMfq42jhoUz9U4RTHWd3asM3olv+MltsBm8gEnmpTXmxUYrDTLSLWbddPxdE/rfLU5aalzTx1yK5MwNHhcDfqcgmIA1XOgRe1+6PYpm9NXLEBF8mFldIuhdz2FWFvL5c7mzQ31UySwIDAQABAoIBAQCX1WmXhr/1V19j7GVwZp6+shfmbf0vKNY6DNmHdKkLP1SKCBSQZaZNYfowhaH/mvuximWx6NnOy0+HiITqi9XqAqotwK+huGfnmYEwriMFE1C7YsC0mWJ4/pRmXbgZIduXODkM8ZWRGBLlfLqWvl593dWPjdzVBB3FakjO6BxRQ+FmGRlj3/JEJ2fWFhss0p3O+JRAOiRzlFduqTMHvtBqLilPg/6nBPR9aIeq1OzsXWTu496selwnGiSDIECQYR3jDsw4c341euyDTPkyMLrcHbGnskdwVgXKpvgwAmheA7hDnOcWuOIOUCmdk4wHSsOx1lw6GAN8QQVSYGQqD4jhAoGBAPnjljWMSONumuyvr3D/exynzRpJnuiiRqf82CaDuhovPwgY+Vhni1eSpE1ONGQSMQaB86JyIX1hfsVoUXg7G6h3Lys5Opxxb6SNvqgi6BrDrjzzDWFJV7lMWUNp/lddNnLG05bOWj2Sqnz2RO3jYpuZr0tHe1BO9VWgdXRgMKWJAoGBAL2EFyUqTHWLRah9WuUkmNHOyavjeQ3CKdCV7tODYLoFC8L2iVnS6/S7tAR6pQm5URVEBPCeHycbpbuZPuke0eabFTmTG7mOittsX0J69DVaSf7xFMC/zBDDqH8/as23kU6YkSsa5Ze4s9ApKHEpy5IZyB+ng8hiN8c9CMIwrHgzAoGBALP1p65mmfNYKzA7EbDh/GpVmgrNbCiC/TlriMqr4PGMhusw+RkmcJ4fmD2oDWjoBPB309pwMRgXh3FpQArDHpcDRi/tpf0WYF10SxLRGLB1rdxs+XzPkeJ7TmmTQrzt/xFHiQe5Ehn3rtoRjPB46gG++xPOpcrfIiWJSi0GPOJpAoGAGH+y3kMRj0BpyNYroeORPc4Vk/rb80NeVHCNZxpcrq9oTdPA/bOefQymwM15+D/Uk4MvgEtwi4WvbwjocQpi6AS0QbUaqGoc2TCxP87VMvBxEFvp6uDgaGpipdB05hMM3bQrT/8yHuLpm8c2Syqz/jcG/9CP4J+RxlfFghT4trECgYEAzrDsOScAZTBtBqUSbCQ8YJI/+onS906ZRu+r5Qood4BmZYZv6KRgX19e5EiIQmoFutHJdfwcEANY1N0pObGhT4Bn13/Xo/sEWx7Aoa8cYG6AMWFXDPW8aWXShvTojVm7ZzDmIgKkw1k6AWzidn1kBVunFf22YoSYo/45FgFqkII=";
+public class rsaencryption {
+    private static String publicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzwaoB9iK1lsgmSlOd9NJr9dpvx0/kHit3/JanWxdcL1JYpod6tAMMrMdjJHMdRhXZjQIisaSl5UOHbmQQPgfN9g3PpndBSejmdWmLIf0q994d/+b2NmA7+szko4dM5Af5mK7xZDV4UbdgPwhurp/d0dDLNJAcWjFWqkSdXUfXqf+KlywXYOgSK7qRXutwoILqSmmgc3M9RmagEqmScF6VA/0dld+/rj8ts2ysNCSZL7Jv/DReJTd2EQ3tgLZ5UR1OwXyrwRMU78OAvrYKgwWLURuLxLGtSH/fujii/6JO0DA8ab/6MTDU6dmMU0slSMdlHpy720YcE3GXKrUgYSicwIDAQAB";
+    private static String privateKey = "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDPBqgH2IrWWyCZKU5300mv12m/HT+QeK3f8lqdbF1wvUlimh3q0Awysx2Mkcx1GFdmNAiKxpKXlQ4duZBA+B832Dc+md0FJ6OZ1aYsh/Sr33h3/5vY2YDv6zOSjh0zkB/mYrvFkNXhRt2A/CG6un93R0Ms0kBxaMVaqRJ1dR9ep/4qXLBdg6BIrupFe63CggupKaaBzcz1GZqASqZJwXpUD/R2V37+uPy2zbKw0JJkvsm/8NF4lN3YRDe2AtnlRHU7BfKvBExTvw4C+tgqDBYtRG4vEsa1If9+6OKL/ok7QMDxpv/oxMNTp2YxTSyVIx2UenLvbRhwTcZcqtSBhKJzAgMBAAECggEBAJxYJYuPUAJj3XFtjXHWod5m6thGqVtcl8r5Rs9+J+7dNE9/njpXle6v8A/Zh7Oih1aK0yyim9BX48o0+ijmeQT+h3ICVrTu45FolM8qeW9XG65b3gFc+Q+260KxioIHROADDlU8dRllICCpyHsxHtQggC2YNsyu1+QIrQUBR4h+LvATn2kXdJK2Br/tx0NW2hmYvlY1MCU0mzRAwrDrNohsACe4Lc3SyU90rrP7NrZOMiceGjB8tdknmqZx7NJaTJySSRM57+SbcTFF2tITfRD5+RoVK/afYstK8/sMe2FJfxHw6PA7pWUNNel925G+P90N+GCU3pjU+0ZAwNv1SvECgYEA+o+9LtWxeTcB7f+WbcWnkXJxjrBgXsvIWd7ERAyxWkpG4yIyAv0iNf4UntN0Ub/nofY102iKbjk/XykhS17iBdNgABbGsRdAoRTsKewDPaUFzEE3mf1My/2RYyLsvjNdQYUgWZbyvZ0/mWNTBd6bOCZs1Bnamu8tYtBRFvSTFrkCgYEA04UCem94PzFGupqWIZVcy4MQtTCo7VrkNGy5ih/75gajR6wBABr46EIrpC7TrPPJuwUnxxzZKAeuW7/NBU8MjVFcVc4GEbauTX+YI1IwowFbepelQcAWE7o1gMFYZRFJouD5MbYQidgjFY/SLvMZ5VHX8Zcw89S0gwAtUvP7rIsCgYBSYO3XNyTpcH9u62he4OxN8q2JN04H/MH7YjVvFik9QUx7IuQEfYtA6y+GZIlK02hppJRf1HAm+yVtuQ0cRa7UMYHPpa1fzgBOtZ1Lzy/llZsJY6vPMiuMqeqiCHqDskmH4CgZrHpUgx3E5ZYHSQAJfwCq33EzHU3zvf/bJ0Aw6QKBgQCX2zdjRWIUJEF+OPuuErizV16IZu3wsj+CL8ipFLtZcsyI6UEynSq0PMVuMzw/QCtFfLcJKXnyVklkj3gW5qDBWHctFyOeVgQfmYpVWW2XqaLOic7YPJrdAOPmk2jt7pJqQJBHk0meXTEbCs1AbcHatH6PcRdxBvWt01O26Xl3bwKBgQDulUsX+Q7sa5mN9eO4VkcBUoc6G+Ag7CZedvYpi/ggCqfXhMEGLxLFHObcWi58ITxiKqoT+40ktnTJXs1XsxyX9Jux+BIjetbMGstGEgpK7OLcDhvVAZY7xOxNDV39631yywjuEzU6xu7FWHVOdpkSwWyEimlXamIOJQTkJHOkBw==";
 
     public static PublicKey getPublicKey(String base64PublicKey) {
         PublicKey publicKey = null;
@@ -93,27 +86,23 @@ public class RSAUtil {
         return publicSignature.verify(signatureBytes);
     }
 
-    public static void main(String[] args) throws IllegalBlockSizeException, InvalidKeyException,
-            NoSuchPaddingException, BadPaddingException, Exception {
+    public static void main(String[] args) throws Exception {
         try {
-
-            String encryptedString = Base64.getEncoder().encodeToString(encrypt("hello world", publicKey));
-            System.out.println("RSA encrypt:" + encryptedString);
-            String decryptedString = decrypt(encryptedString, privateKey);
-            System.out.println("RSA decrypt:" + decryptedString);
-
-            // Sign
+            String encryptedString = Base64.getEncoder().encodeToString(encrypt("Dhiraj is the author", publicKey));
+            System.out.println(encryptedString);
+            String decryptedString = RSAUtil.decrypt(encryptedString, privateKey);
+            System.out.println(decryptedString);
 
             String plainText = "hello";
             String signx = RSASign(plainText, getPrivateKey(privateKey));
             System.out.println("RSA Sign:" + signx);
 
             // Verify
-
             boolean verify = RSAVerify(plainText, signx, getPublicKey(publicKey));
             System.out.println("RSAVerify:" + verify);
 
-            // read file
+            System.out.println("-------------------------------------------");
+
 
             String privateKeyContent = new String(
                     Files.readAllBytes(Paths.get(ClassLoader.getSystemResource("privateKey.pem").toURI())));
@@ -132,7 +121,7 @@ public class RSAUtil {
             System.out.println(publicKeyContent);
 
             String signx2 = RSASign(plainText, getPrivateKey(privateKeyContent));
-            System.out.println(signx2);
+            System.out.println("RSA signx2:" + signx2);
 
         } catch (NoSuchAlgorithmException e) {
             System.err.println(e.getMessage());
