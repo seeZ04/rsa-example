@@ -2,7 +2,7 @@ const crypto = require('crypto')
 const path = require('path')
 const fs = require('fs')
 
-function encrypt(toEncrypt, relativeOrAbsolutePathToPublicKey) {
+function RsaEncrypt(toEncrypt, relativeOrAbsolutePathToPublicKey) {
     const absolutePath = path.resolve(relativeOrAbsolutePathToPublicKey)
     const publicKey = fs.readFileSync(absolutePath, 'utf8')
     const buffer = Buffer.from(toEncrypt, 'utf8')
@@ -57,10 +57,14 @@ function verifyRsaPublicKey(plainText, signature, relativeOrAbsolutePathToPublic
 function main() {
     console.log("start---------------")
     let plainText = "MyGmobile"
-    let sign = generateSignatureRsa(plainText,"./privateKey.pem")
+
+    let encrypt = RsaEncrypt(plainText,"../RSA/privateKey.pem")
+    console.log("encrypt:", encrypt)
+
+    let sign = generateSignatureRsa(plainText,"../RSA/privateKey.pem")
     console.log("sign:", sign)
 
-    let verify = verifyRsaPublicKey(plainText,sign,"./publicKey.pem")
+    let verify = verifyRsaPublicKey(plainText,sign,"../RSA/publicKey.pem")
     console.log("verify:", verify)
 
 

@@ -132,7 +132,12 @@ public class RSAUtil {
             System.out.println(publicKeyContent);
 
             String signx2 = RSASign(plainText, getPrivateKey(privateKeyContent));
-            System.out.println(signx2);
+            System.out.println("RSA Sign:" + signx2);
+
+
+            boolean verify2 = RSAVerify(plainText, signx2, getPublicKey(publicKeyContent));
+            System.out.println("RSAVerify2:" + verify2);
+
 
         } catch (NoSuchAlgorithmException e) {
             System.err.println(e.getMessage());
