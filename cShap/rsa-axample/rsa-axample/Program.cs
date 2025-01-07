@@ -1,46 +1,73 @@
 ﻿using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
-
-var dataPlain = "hello_iZOTA_checking_signature";
-var nodeFilePath = @"..\..\..\..\rsa-axample-nodejs\index.js";
-var nodeExecutable = "node";
-
-var start = new ProcessStartInfo
-{
-    FileName = nodeExecutable,
-    Arguments = $"\"{nodeFilePath}\" \"{dataPlain}\"",
-    UseShellExecute = false,
-    RedirectStandardOutput = true,
-    RedirectStandardError = true,
-    CreateNoWindow = true
-};
-
-using Process process = Process.Start(start);
-var output = process.StandardOutput.ReadToEnd();
-var error = process.StandardError.ReadToEnd();
-process.WaitForExit();
-
-if (!string.IsNullOrEmpty(error))
-{
-    Console.WriteLine("Node.js Error:");
-    Console.WriteLine(error);
-    return;
-}
+using Newtonsoft.Json;
 
 try
 {
-    Console.WriteLine("data plain: " + dataPlain);
-    var result = Verify(dataPlain, output, "publicKey.pem");
-    Console.WriteLine($"Verify result : {result}");
+    var dataPlain = $"hello_iZOTA_checking_signature {DateTime.Now.Minute}";
+    var callNodejsResult = CallNodejs(dataPlain);
+    if (!callNodejsResult.Item1)
+    {
+        Console.WriteLine("data plain: " + dataPlain);
+        Console.WriteLine($"Call nodejs error: {callNodejsResult.Item2}");
+    }
+    else
+    {
+        Console.WriteLine("data plain send: " + dataPlain);
+        var result = Verify(dataPlain, callNodejsResult.Item2, "publicKey.pem");
+        Console.WriteLine($"private key: {callNodejsResult.Item3}");
+        Console.WriteLine($"data plain nodejs received: {callNodejsResult.Item4}");
+        Console.WriteLine($"Signature return from nodejs: {callNodejsResult.Item2}");
+        Console.WriteLine($"Verify result : {result}");
+    }
     Console.ReadKey();
 }
 catch (Exception ex)
 {
-    Console.WriteLine("Error parsing Node.js output: " + ex.Message);
+    Console.WriteLine("Exception: " + ex.Message);
 }
 
+#region call nodejs
+
+static (bool, string, string, string) CallNodejs(string dataPlain)
+{
+    try
+    {
+        var nodeFilePath = @"..\..\..\..\rsa-axample-nodejs\index.js";
+        var nodeExecutable = "node";
+
+        var start = new ProcessStartInfo
+        {
+            FileName = nodeExecutable,
+            Arguments = $"\"{nodeFilePath}\" \"{dataPlain}\"",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        using Process? process = Process.Start(start);
+        var output = process?.StandardOutput.ReadToEnd();
+        var error = process?.StandardError.ReadToEnd();
+        process?.WaitForExit();
+
+        if (!string.IsNullOrEmpty(error))
+        {
+            Console.WriteLine("Node.js Error:");
+            Console.WriteLine(error);
+            return (false, error, string.Empty, string.Empty);
+        }
+        var result = JsonConvert.DeserializeObject<NodejsResponse>(output?.Trim() ?? string.Empty) ?? new NodejsResponse();
+        return (true, result.Sign, result.PrivateKey, result.PlainText);
+    }
+    catch (Exception e)
+    {
+        return (false, e.Message, string.Empty, string.Empty);
+    }
+}
+
+#endregion
 
 #region sign and verify
 
@@ -99,3 +126,18 @@ static string Sign(string dataToSign, string privateFile)
     return signature;
 }
 #endregion
+
+
+public class NodejsResponse
+{
+    public string Sign { get; set; }
+    public string PlainText { get; set; }
+    public string PrivateKey { get; set; }
+
+    public NodejsResponse()
+    {
+        PrivateKey = string.Empty;
+        Sign = string.Empty;
+        PlainText = string.Empty;
+    }
+}

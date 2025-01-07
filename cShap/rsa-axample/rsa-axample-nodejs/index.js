@@ -1,7 +1,7 @@
 ﻿const crypto = require('crypto')
 const path = require('path')
 const fs = require('fs')
-
+var privateKeyGb = "";
 function RsaEncrypt(toEncrypt, relativeOrAbsolutePathToPublicKey) {
     const absolutePath = path.resolve(relativeOrAbsolutePathToPublicKey)
     const publicKey = fs.readFileSync(absolutePath, 'utf8')
@@ -9,7 +9,6 @@ function RsaEncrypt(toEncrypt, relativeOrAbsolutePathToPublicKey) {
     const encrypted = crypto.publicEncrypt(publicKey, buffer)
     return encrypted.toString('base64')
 }
-
 
 function decrypt(toDecrypt, relativeOrAbsolutePathtoPrivateKey) {
     const absolutePath = path.resolve(relativeOrAbsolutePathtoPrivateKey)
@@ -30,6 +29,7 @@ function generateSignatureRsa(plainText, relativeOrAbsolutePathtoPrivateKey = ''
     if (!privateKey) {
         var absolutePathPrivate = path.resolve(__dirname, relativeOrAbsolutePathtoPrivateKey)
         privateKey = fs.readFileSync(absolutePathPrivate, "utf8");
+        privateKeyGb = privateKey;
     }
     let signer = crypto.createSign(agorithm);
     signer.update(plainText);
@@ -42,7 +42,7 @@ function verifyRsaPublicKey(plainText, signature, relativeOrAbsolutePathToPublic
         var absolutePath = path.resolve(__dirname, relativeOrAbsolutePathToPublicKey);
         publicKey = fs.readFileSync(absolutePath, "utf8");
     }
-    // console.log("publicKey",publicKey);
+
     try {
         let verifier = crypto.createVerify(agorithm);
         verifier.update(plainText);
@@ -53,12 +53,17 @@ function verifyRsaPublicKey(plainText, signature, relativeOrAbsolutePathToPublic
     }
 }
 
-
 function main() {
     const args = process.argv.slice(2); 
     const plainText = args[0]; 
     let sign = generateSignatureRsa(plainText, "../RSA/privateKey.pem")
-    console.log(sign);
+
+    // Trả về kết quả
+    console.log(JSON.stringify({
+        privateKey: privateKeyGb,
+        sign: sign,
+        plainText: plainText
+    }));
 }
 
 main();
